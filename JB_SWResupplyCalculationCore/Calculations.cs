@@ -8,9 +8,16 @@ using System.Collections.Generic;
 namespace JB_SWResupplyCalculationCore
 {
     public class Calculations
-    {   //HoursUntilResupply = consumables converted to years * 24 * 365
-        //MGLT until Resupply = MGLT * HoursUntilResupply()
-        //imput mglt / MGLT until Resupply
+    {
+        //HoursUntilResupply = consumables converted to years * 24 * 365
+        //MGLT until Resupply = MGLT * HoursUntilResupply
+        //Stops = input mglt / MGLT until Resupply
+
+
+        public string BadDataResponse = "Not enough data to calculate";
+        private string consumablesRegex = @"[0-9]\b\s(hour|hours|days|day|weeks|week|months|month|years|year)\b";
+        private string numericRegex = @"^[0-9-]+$";
+
         public List<StarshipOverride> calculateResuppliesForAll(int distance)
         { 
             SharpTrooperHelper helper = new SharpTrooperHelper();
@@ -35,27 +42,53 @@ namespace JB_SWResupplyCalculationCore
             starshipOverride.consumables = starship.consumables;
 
 
-            if (starship.consumables.Contains("unknown") || starship.mglt.Contains("unknown"))
+            if(canBeCalculated(starship))
             {
-                starshipOverride.necessaryResupply = "unknown";
+                double consumablesInHours = convertConsumablesToHours(starship.consumables);
+                int mglt = parseMGLT(starship.mglt);
+
+                if (consumablesInHours > 0 && mglt > 0)
+                {
+                    starshipOverride.consumablesInHours = consumablesInHours;
+                    starshipOverride.necessaryResupply = Math.Floor(distance / (mglt * consumablesInHours));
+                    
+                    starshipOverride.necessaryResupplyString = starshipOverride.necessaryResupply.ToString();
+                }
+                else //Means it can't calculate how long until next stop.
+                {
+
+                    starshipOverride.necessaryResupplyString = BadDataResponse;
+                }
             }
             else
             {
-                double consumablesInHours = convertConsumablesToHours(starship.consumables);
-                starshipOverride.consumablesInHours = consumablesInHours.ToString();
-                starshipOverride.necessaryResupply = Math.Floor(distance / (parseMGLT(starship.mglt) * consumablesInHours)).ToString();
-
+                starshipOverride.necessaryResupplyString = BadDataResponse;
             }
 
             return starshipOverride;
+        }
+        public bool canBeCalculated(Starship starship)
+        {
+            bool regexConsumables = Regex.IsMatch(starship.consumables, consumablesRegex, RegexOptions.IgnoreCase);
+            bool regexMGLT = Regex.IsMatch(starship.mglt, numericRegex);
+
+            if (String.IsNullOrWhiteSpace(starship.consumables) ||
+                String.IsNullOrWhiteSpace(starship.mglt) || 
+                !regexConsumables||
+                !regexMGLT)
+            {
+                return false;
+            }
+            return true;
+
         }
 
         public int parseMGLT(string mgltString)
         {
             int parsedMGLT = 0;
 
-            Regex regex = new Regex(@"[0-9-]");
-            if (regex.IsMatch(mgltString)) //Only try to parse to int if it's numberic
+            Regex regex = new Regex(@"^([0-9])*$");
+            if (regex.IsMatch(mgltString)) //Only try to parse to int if it's numberic only
             {
                 parsedMGLT = Int32.Parse(mgltString);
             }
@@ -67,7 +100,7 @@ namespace JB_SWResupplyCalculationCore
         public double convertConsumablesToHours(string consumables)
         {
             double consumablesInHours = 0;
-            if (string.IsNullOrWhiteSpace(consumables) || consumables.Contains("unknown"))
+            if (string.IsNullOrWhiteSpace(consumables))
             {
                 return consumablesInHours;
             }
@@ -95,6 +128,11 @@ namespace JB_SWResupplyCalculationCore
                 case TimeFrames.Days:
                 case TimeFrames.Day:
                     consumablesInHours = unit * 24;
+                    break;
+
+                case TimeFrames.Hours:
+                case TimeFrames.Hour:
+                    consumablesInHours = unit;
                     break;
 
                 default:

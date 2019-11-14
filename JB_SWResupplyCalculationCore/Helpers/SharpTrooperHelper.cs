@@ -9,11 +9,6 @@ namespace JB_SWResupplyCalculationCore.Helpers
 {
     public class SharpTrooperHelper
     {
-
-        //public SharpEntityResults<StarshipOverride> GetAllStarships(string pageNumber = "1")
-        //{
-
-        //}
         public List<Starship> GetAllStarships(string pageNumber = "1")
         {
             string nextPage = pageNumber;
@@ -29,16 +24,7 @@ namespace JB_SWResupplyCalculationCore.Helpers
 
                 nextPage = result.nextPageNo;
             }
-            //SharpEntityResults<StarshipOverride> resultOverride = new SharpEntityResults<StarshipOverride>();
-            //resultOverride.results = new List<StarshipOverride>();
-
-            //foreach (Starship starship in result.results)
-            //{
-            //    StarshipOverride starshipOverride = new StarshipOverride();
-                
-            //    resultOverride.results.Add(starshipOverride);
-                
-            //}
+            
             return resultList;
             
         }

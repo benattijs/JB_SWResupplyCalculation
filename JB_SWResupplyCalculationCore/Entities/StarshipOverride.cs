@@ -7,12 +7,17 @@ namespace JB_SWResupplyCalculationCore.Entities
 {
     public class StarshipOverride : Starship
     {
-        public string consumablesInHours
+        public double consumablesInHours
         {
             get;
             set;
         }
-        public string necessaryResupply
+        public double necessaryResupply
+        {
+            get;
+            set;
+        }
+        public string necessaryResupplyString
         {
             get;
             set;
